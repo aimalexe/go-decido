@@ -9,28 +9,24 @@ import (
 
 var ErrNotFound = errors.New("decision not found")
 
-// Store persists decisions. Implementations must return copies from List/Get
-// so callers cannot mutate the backing store without Update.
+// Store persists decisions. Add assigns the decision ID. Implementations must
+// return copies from Add/List/Get so callers cannot bypass Update.
 type Store interface {
-	Add(d decision.Decision) decision.Decision
+	Add(d decision.Decision) (decision.Decision, error)
 	List() []decision.Decision
 	Get(id int) (decision.Decision, error)
 	Update(d decision.Decision) error
 }
 
 type DecisionService struct {
-	store  Store
-	nextID int
+	store Store
 }
 
 func NewDecisionService(store Store) *DecisionService {
 	if store == nil {
 		store = NewMemoryStore()
 	}
-	return &DecisionService{
-		store:  store,
-		nextID: 1,
-	}
+	return &DecisionService{store: store}
 }
 
 func NewDefaultService() *DecisionService {
@@ -42,9 +38,7 @@ func (s *DecisionService) Create(title string) (decision.Decision, error) {
 	if err != nil {
 		return decision.Decision{}, err
 	}
-	d.ID = s.nextID
-	s.nextID++
-	return s.store.Add(d), nil
+	return s.store.Add(d)
 }
 
 func (s *DecisionService) List() []decision.Decision {
@@ -106,19 +100,24 @@ func (s *DecisionService) SetScore(decisionID, alternativeID, criterionID, score
 	if err != nil {
 		return decision.Decision{}, err
 	}
+
 	alt := d.FindAlternative(alternativeID)
 	if alt == nil {
 		return decision.Decision{}, decision.ErrAlternativeNotFound
 	}
+
 	if d.FindCriterion(criterionID) == nil {
 		return decision.Decision{}, decision.ErrCriterionNotFound
 	}
+
 	if err := alt.SetScore(criterionID, score); err != nil {
 		return decision.Decision{}, err
 	}
+
 	if err := s.store.Update(d); err != nil {
 		return decision.Decision{}, err
 	}
+
 	return d, nil
 }
 
@@ -127,8 +126,10 @@ func (s *DecisionService) Results(decisionID int) ([]decision.Result, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	if err := d.ValidateReady(); err != nil {
 		return nil, fmt.Errorf("cannot calculate results: %w", err)
 	}
+
 	return d.CalculateResults(), nil
 }

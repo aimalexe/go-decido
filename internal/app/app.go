@@ -2,6 +2,7 @@ package app
 
 import (
 	"fmt"
+	"path/filepath"
 
 	"go-decido/internal/decision"
 	"go-decido/internal/input"
@@ -11,7 +12,12 @@ import (
 )
 
 func Run() {
-	svc := service.NewDefaultService()
+	store, err := service.NewJSONFileStore(filepath.Join("data", "decisions.json"))
+	if err != nil {
+		ui.PrintError(fmt.Errorf("load saved decisions: %w", err))
+		return
+	}
+	svc := service.NewDecisionService(store)
 	ui.PrintBanner()
 
 	for {
