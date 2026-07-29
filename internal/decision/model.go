@@ -9,7 +9,7 @@ type Criterion struct {
 type Alternative struct {
 	ID     int
 	Name   string
-	Scores map[int]int
+	Scores map[int]int // criterion ID -> score (1-5)
 }
 
 type Decision struct {
@@ -17,9 +17,18 @@ type Decision struct {
 	Title        string
 	Criteria     []Criterion
 	Alternatives []Alternative
+
+	nextCriterionID   int
+	nextAlternativeID int
 }
 
 type Result struct {
+	AlternativeID   int
 	AlternativeName string
 	Score           float64
 }
+
+const (
+	MinScore = 1
+	MaxScore = 5
+)
