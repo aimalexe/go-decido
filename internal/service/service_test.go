@@ -107,3 +107,73 @@ func TestCreate_EmptyTitle(t *testing.T) {
 		t.Fatalf("got %v, want ErrEmptyTitle", err)
 	}
 }
+
+func TestRenameAndDeleteDecision(t *testing.T) {
+	svc := service.NewDefaultService()
+	d, _ := svc.Create("Laptop")
+	_, _ = svc.Create("Phone")
+
+	renamed, err := svc.Rename(d.ID, "Buy laptop")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if renamed.Title != "Buy laptop" {
+		t.Fatalf("title = %q", renamed.Title)
+	}
+
+	if err := svc.Delete(d.ID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := svc.Get(d.ID); !errors.Is(err, service.ErrNotFound) {
+		t.Fatalf("got %v, want ErrNotFound", err)
+	}
+	if svc.Count() != 1 {
+		t.Fatalf("count = %d, want 1", svc.Count())
+	}
+}
+
+func TestRenameAndDeleteCriterionAndAlternative(t *testing.T) {
+	svc := service.NewDefaultService()
+	d, _ := svc.Create("Laptop")
+	_, _ = svc.AddCriterion(d.ID, "Price")
+	_, _ = svc.AddCriterion(d.ID, "Battery")
+	_, _ = svc.AddAlternative(d.ID, "ThinkPad")
+	_, _ = svc.AddAlternative(d.ID, "MacBook")
+	_, _ = svc.SetScore(d.ID, 1, 1, 4)
+	_, _ = svc.SetScore(d.ID, 1, 2, 5)
+
+	updated, err := svc.RenameCriterion(d.ID, 1, "Cost")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if updated.Criteria[0].Name != "Cost" {
+		t.Fatalf("criterion = %q", updated.Criteria[0].Name)
+	}
+
+	updated, err = svc.RenameAlternative(d.ID, 2, "MacBook Pro")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if updated.FindAlternative(2).Name != "MacBook Pro" {
+		t.Fatalf("alternative = %q", updated.FindAlternative(2).Name)
+	}
+
+	updated, err = svc.DeleteCriterion(d.ID, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(updated.Criteria) != 1 || updated.Criteria[0].ID != 2 {
+		t.Fatalf("unexpected criteria: %+v", updated.Criteria)
+	}
+	if _, ok := updated.FindAlternative(1).ScoreFor(1); ok {
+		t.Fatal("expected score for deleted criterion to be removed")
+	}
+
+	updated, err = svc.DeleteAlternative(d.ID, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(updated.Alternatives) != 1 || updated.Alternatives[0].ID != 2 {
+		t.Fatalf("unexpected alternatives: %+v", updated.Alternatives)
+	}
+}

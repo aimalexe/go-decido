@@ -68,6 +68,19 @@ func TestJSONFileStoreRoundTrip(t *testing.T) {
 	if second.ID != 2 {
 		t.Fatalf("want decision ID 2, got %d", second.ID)
 	}
+
+	if err := reloaded.Delete(d.ID); err != nil {
+		t.Fatal(err)
+	}
+
+	afterDelete, err := service.NewJSONFileStore(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	remaining := afterDelete.List()
+	if len(remaining) != 1 || remaining[0].ID != second.ID {
+		t.Fatalf("unexpected decisions after delete reload: %+v", remaining)
+	}
 }
 
 func TestJSONFileStoreMissingFileStartsEmpty(t *testing.T) {

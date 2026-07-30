@@ -16,6 +16,8 @@ const (
 	IconCriterion   = "◇"
 	IconAlternative = "○"
 	IconScore       = "▤"
+	IconEdit        = "✎"
+	IconDelete      = "⌫"
 	IconBack        = "↩"
 	IconExit        = "⏻"
 )

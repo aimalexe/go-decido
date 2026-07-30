@@ -186,3 +186,66 @@ func TestScoreFor_Ok(t *testing.T) {
 		t.Fatal("expected missing score")
 	}
 }
+
+func TestRenameAndDeleteEntities(t *testing.T) {
+	d, _ := decision.NewDecision("Laptop")
+	_ = decision.AddCriterion(&d, "Price")
+	_ = decision.AddCriterion(&d, "Battery")
+	_ = decision.AddAlternative(&d, "ThinkPad")
+	_ = decision.AddAlternative(&d, "MacBook")
+	_ = d.Alternatives[0].SetScore(1, 4)
+	_ = d.Alternatives[0].SetScore(2, 5)
+	_ = d.Alternatives[1].SetScore(1, 3)
+	_ = d.Alternatives[1].SetScore(2, 4)
+
+	if err := decision.RenameDecision(&d, "  Buy laptop  "); err != nil {
+		t.Fatal(err)
+	}
+	if d.Title != "Buy laptop" {
+		t.Fatalf("title = %q", d.Title)
+	}
+
+	if err := decision.RenameCriterion(&d, 1, "Cost"); err != nil {
+		t.Fatal(err)
+	}
+	if d.Criteria[0].Name != "Cost" {
+		t.Fatalf("criterion name = %q", d.Criteria[0].Name)
+	}
+
+	if err := decision.RenameAlternative(&d, 2, "MacBook Pro"); err != nil {
+		t.Fatal(err)
+	}
+	if d.Alternatives[1].Name != "MacBook Pro" {
+		t.Fatalf("alternative name = %q", d.Alternatives[1].Name)
+	}
+
+	if err := decision.DeleteCriterion(&d, 1); err != nil {
+		t.Fatal(err)
+	}
+	if len(d.Criteria) != 1 || d.Criteria[0].ID != 2 {
+		t.Fatalf("unexpected criteria after delete: %+v", d.Criteria)
+	}
+	if _, ok := d.Alternatives[0].ScoreFor(1); ok {
+		t.Fatal("expected orphaned criterion score to be removed")
+	}
+	if score, ok := d.Alternatives[0].ScoreFor(2); !ok || score != 5 {
+		t.Fatalf("expected remaining score 5, got %d, %v", score, ok)
+	}
+
+	if err := decision.DeleteAlternative(&d, 1); err != nil {
+		t.Fatal(err)
+	}
+	if len(d.Alternatives) != 1 || d.Alternatives[0].ID != 2 {
+		t.Fatalf("unexpected alternatives after delete: %+v", d.Alternatives)
+	}
+
+	if err := decision.DeleteCriterion(&d, 99); !errors.Is(err, decision.ErrCriterionNotFound) {
+		t.Fatalf("got %v, want ErrCriterionNotFound", err)
+	}
+	if err := decision.DeleteAlternative(&d, 99); !errors.Is(err, decision.ErrAlternativeNotFound) {
+		t.Fatalf("got %v, want ErrAlternativeNotFound", err)
+	}
+	if err := decision.RenameDecision(&d, " "); !errors.Is(err, decision.ErrEmptyTitle) {
+		t.Fatalf("got %v, want ErrEmptyTitle", err)
+	}
+}

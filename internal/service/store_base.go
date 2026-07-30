@@ -51,6 +51,21 @@ func (s *baseStore) update(d decision.Decision) error {
 	return nil
 }
 
+func (s *baseStore) delete(id int) error {
+	if _, ok := s.byID[id]; !ok {
+		return fmt.Errorf("%w: id %d", ErrNotFound, id)
+	}
+
+	delete(s.byID, id)
+	for i, existingID := range s.order {
+		if existingID == id {
+			s.order = append(s.order[:i], s.order[i+1:]...)
+			break
+		}
+	}
+	return nil
+}
+
 func cloneDecision(d decision.Decision) decision.Decision {
 	cp := d
 

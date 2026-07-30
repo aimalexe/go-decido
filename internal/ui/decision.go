@@ -61,12 +61,12 @@ func PrintAlternatives(item decision.Decision) {
 	}
 
 	rows := make([]Row, 0, len(item.Alternatives))
-	for i, alternative := range item.Alternatives {
-		rows = append(rows, Row{i + 1, alternative.Name})
+	for _, alternative := range item.Alternatives {
+		rows = append(rows, Row{alternative.ID, alternative.Name})
 	}
 
 	RenderTable(Table{
-		Header: Row{"#", "Alternative"},
+		Header: Row{"ID", "Alternative"},
 		Rows:   rows,
 	})
 }
@@ -79,11 +79,11 @@ func PrintScorecard(item decision.Decision) {
 	}
 	if len(item.Criteria) == 0 {
 		rows := make([]Row, 0, len(item.Alternatives))
-		for i, alternative := range item.Alternatives {
-			rows = append(rows, Row{i + 1, alternative.Name})
+		for _, alternative := range item.Alternatives {
+			rows = append(rows, Row{alternative.ID, alternative.Name})
 		}
 		RenderTable(Table{
-			Header: Row{"#", "Alternative"},
+			Header: Row{"ID", "Alternative"},
 			Rows:   rows,
 		})
 		return

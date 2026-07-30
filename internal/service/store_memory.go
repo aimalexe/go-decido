@@ -34,3 +34,7 @@ func (m *MemoryStore) Get(id int) (decision.Decision, error) {
 func (m *MemoryStore) Update(d decision.Decision) error {
 	return m.update(d)
 }
+
+func (m *MemoryStore) Delete(id int) error {
+	return m.delete(id)
+}

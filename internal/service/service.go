@@ -16,6 +16,7 @@ type Store interface {
 	List() []decision.Decision
 	Get(id int) (decision.Decision, error)
 	Update(d decision.Decision) error
+	Delete(id int) error
 }
 
 type DecisionService struct {
@@ -39,6 +40,24 @@ func (s *DecisionService) Create(title string) (decision.Decision, error) {
 		return decision.Decision{}, err
 	}
 	return s.store.Add(d)
+}
+
+func (s *DecisionService) Rename(id int, title string) (decision.Decision, error) {
+	d, err := s.store.Get(id)
+	if err != nil {
+		return decision.Decision{}, err
+	}
+	if err := decision.RenameDecision(&d, title); err != nil {
+		return decision.Decision{}, err
+	}
+	if err := s.store.Update(d); err != nil {
+		return decision.Decision{}, err
+	}
+	return d, nil
+}
+
+func (s *DecisionService) Delete(id int) error {
+	return s.store.Delete(id)
 }
 
 func (s *DecisionService) List() []decision.Decision {
@@ -73,6 +92,62 @@ func (s *DecisionService) AddAlternative(decisionID int, name string) (decision.
 		return decision.Decision{}, err
 	}
 	if err := decision.AddAlternative(&d, name); err != nil {
+		return decision.Decision{}, err
+	}
+	if err := s.store.Update(d); err != nil {
+		return decision.Decision{}, err
+	}
+	return d, nil
+}
+
+func (s *DecisionService) RenameCriterion(decisionID, criterionID int, name string) (decision.Decision, error) {
+	d, err := s.store.Get(decisionID)
+	if err != nil {
+		return decision.Decision{}, err
+	}
+	if err := decision.RenameCriterion(&d, criterionID, name); err != nil {
+		return decision.Decision{}, err
+	}
+	if err := s.store.Update(d); err != nil {
+		return decision.Decision{}, err
+	}
+	return d, nil
+}
+
+func (s *DecisionService) DeleteCriterion(decisionID, criterionID int) (decision.Decision, error) {
+	d, err := s.store.Get(decisionID)
+	if err != nil {
+		return decision.Decision{}, err
+	}
+	if err := decision.DeleteCriterion(&d, criterionID); err != nil {
+		return decision.Decision{}, err
+	}
+	if err := s.store.Update(d); err != nil {
+		return decision.Decision{}, err
+	}
+	return d, nil
+}
+
+func (s *DecisionService) RenameAlternative(decisionID, alternativeID int, name string) (decision.Decision, error) {
+	d, err := s.store.Get(decisionID)
+	if err != nil {
+		return decision.Decision{}, err
+	}
+	if err := decision.RenameAlternative(&d, alternativeID, name); err != nil {
+		return decision.Decision{}, err
+	}
+	if err := s.store.Update(d); err != nil {
+		return decision.Decision{}, err
+	}
+	return d, nil
+}
+
+func (s *DecisionService) DeleteAlternative(decisionID, alternativeID int) (decision.Decision, error) {
+	d, err := s.store.Get(decisionID)
+	if err != nil {
+		return decision.Decision{}, err
+	}
+	if err := decision.DeleteAlternative(&d, alternativeID); err != nil {
 		return decision.Decision{}, err
 	}
 	if err := s.store.Update(d); err != nil {

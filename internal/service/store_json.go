@@ -84,6 +84,14 @@ func (s *JSONFileStore) Update(d decision.Decision) error {
 	return s.Save()
 }
 
+func (s *JSONFileStore) Delete(id int) error {
+	if err := s.delete(id); err != nil {
+		return err
+	}
+
+	return s.Save()
+}
+
 func (s *JSONFileStore) Save() error {
 	data, err := s.marshal()
 	if err != nil {
