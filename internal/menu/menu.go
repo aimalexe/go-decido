@@ -1,9 +1,8 @@
 package menu
 
 import (
-	"fmt"
-
 	"go-decido/internal/input"
+	"go-decido/internal/ui"
 )
 
 const (
@@ -22,27 +21,44 @@ const (
 )
 
 func ShowMain(decisionCount int) int {
-	fmt.Println()
-	fmt.Println("============ MENU ============")
-	fmt.Println("--- Decisions ---")
-	fmt.Println("  1. Create decision")
-	fmt.Println("  2. List decisions")
-	fmt.Println("  3. Open decision")
-	fmt.Println("--- App ---")
-	fmt.Println("  4. Exit")
-	fmt.Printf("Status: %d decision(s)\n", decisionCount)
+	ui.PrintMenu("MAIN MENU", "", []ui.MenuSection{
+		{
+			Title: "DECISIONS",
+			Items: []ui.MenuItem{
+				{Number: MainCreate, Icon: ui.IconDecision, Label: "Create decision"},
+				{Number: MainList, Icon: ui.IconFolder, Label: "List decisions"},
+				{Number: MainOpen, Icon: ui.IconArrow, Label: "Open decision"},
+			},
+		},
+		{
+			Title: "APP",
+			Items: []ui.MenuItem{
+				{Number: MainExit, Icon: ui.IconExit, Label: "Exit"},
+			},
+		},
+	}, ui.DecisionCountStatus(decisionCount))
 	return input.PromptIntInRange("Enter your choice:", 1, 4)
 }
 
 func ShowWorkspace(title string) int {
-	fmt.Println()
-	fmt.Printf("Working on: %q\n", title)
-	fmt.Println("  1. View")
-	fmt.Println("  2. Add criterion")
-	fmt.Println("  3. Add alternative")
-	fmt.Println("  4. Set weights")
-	fmt.Println("  5. Score alternatives")
-	fmt.Println("  6. Calculate results")
-	fmt.Println("  7. Back")
+	ui.PrintMenu("DECISION WORKSPACE", "Working on: "+title, []ui.MenuSection{
+		{
+			Title: "BUILD",
+			Items: []ui.MenuItem{
+				{Number: WorkView, Icon: ui.IconDecision, Label: "View overview"},
+				{Number: WorkCriterion, Icon: ui.IconCriterion, Label: "Add criterion"},
+				{Number: WorkAlternative, Icon: ui.IconAlternative, Label: "Add alternative"},
+				{Number: WorkWeights, Icon: ui.IconStar, Label: "Set weights"},
+			},
+		},
+		{
+			Title: "EVALUATE",
+			Items: []ui.MenuItem{
+				{Number: WorkScore, Icon: ui.IconScore, Label: "Score alternatives"},
+				{Number: WorkResults, Icon: ui.IconTrophy, Label: "Calculate results"},
+				{Number: WorkBack, Icon: ui.IconBack, Label: "Back"},
+			},
+		},
+	}, "")
 	return input.PromptIntInRange("Enter your choice:", 1, 7)
 }

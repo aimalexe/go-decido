@@ -14,7 +14,7 @@ import (
 func Run() {
 	store, err := service.NewJSONFileStore(filepath.Join("data", "decisions.json"))
 	if err != nil {
-		ui.PrintError(fmt.Errorf("load saved decisions: %w", err))
+		ui.Errorf("Could not load saved decisions: %v", err)
 		return
 	}
 	svc := service.NewDecisionService(store)
@@ -31,7 +31,7 @@ func Run() {
 			openWorkspace(svc)
 		case menu.MainExit:
 			if input.PromptYesNo("Exit go-decido? (y/n):") {
-				fmt.Println("Thank you for using go-decido. Goodbye!")
+				ui.PrintGoodbye()
 				return
 			}
 		}
@@ -45,11 +45,11 @@ func createDecision(svc *service.DecisionService) {
 		ui.PrintError(err)
 		return
 	}
-	ui.PrintSuccess(fmt.Sprintf("Created decision %q. Open it to add criteria and alternatives.", d.Title))
+	ui.Successf("Created decision %q. Open it to add criteria and alternatives.", d.Title)
 }
 
 func openWorkspace(svc *service.DecisionService) {
-	id, ok := ui.SelectDecision(svc.List())
+	id, ok := selectDecision(svc.List())
 	if !ok {
 		return
 	}
@@ -88,7 +88,7 @@ func addCriterion(svc *service.DecisionService, decisionID int) {
 		ui.PrintError(err)
 		return
 	}
-	ui.PrintSuccess(fmt.Sprintf("Added criterion %q to %q.", name, d.Title))
+	ui.Successf("Added criterion %q to %q.", name, d.Title)
 }
 
 func addAlternative(svc *service.DecisionService, decisionID int) {
@@ -98,7 +98,7 @@ func addAlternative(svc *service.DecisionService, decisionID int) {
 		ui.PrintError(err)
 		return
 	}
-	ui.PrintSuccess(fmt.Sprintf("Added alternative %q to %q.", name, d.Title))
+	ui.Successf("Added alternative %q to %q.", name, d.Title)
 }
 
 func setWeights(svc *service.DecisionService, decisionID int) {
@@ -109,7 +109,7 @@ func setWeights(svc *service.DecisionService, decisionID int) {
 			return
 		}
 		if len(d.Criteria) == 0 {
-			fmt.Println("Please add criteria first.")
+			ui.Warningf("Please add criteria first.")
 			return
 		}
 
@@ -119,13 +119,13 @@ func setWeights(svc *service.DecisionService, decisionID int) {
 			ids[c.ID] = struct{}{}
 		}
 
-		fmt.Print("Criterion ID (0 = done): ")
+		ui.Promptf("Criterion ID (0 = done):")
 		criterionID := input.ReadInt()
 		if criterionID == 0 {
 			return
 		}
 		if _, exists := ids[criterionID]; !exists {
-			fmt.Printf("No criterion with ID %d.\n", criterionID)
+			ui.Warningf("No criterion with ID %d.", criterionID)
 			continue
 		}
 
@@ -135,7 +135,7 @@ func setWeights(svc *service.DecisionService, decisionID int) {
 			ui.PrintError(err)
 			continue
 		}
-		ui.PrintSuccess(fmt.Sprintf("Updated weight. Total weight: %.2f", updated.TotalWeight()))
+		ui.Successf("Updated weight. Total weight: %.2f", updated.TotalWeight())
 
 		if !input.PromptYesNo("Set another weight? (y/n):") {
 			return
@@ -150,15 +150,15 @@ func scoreAlternatives(svc *service.DecisionService, decisionID int) {
 		return
 	}
 	if len(d.Criteria) == 0 {
-		fmt.Println("Please add criteria first.")
+		ui.Warningf("Please add criteria first.")
 		return
 	}
 	if len(d.Alternatives) == 0 {
-		fmt.Println("Please add alternatives first.")
+		ui.Warningf("Please add alternatives first.")
 		return
 	}
 
-	fmt.Printf("Scoring scale: %s\n", decision.FormatScoreScale())
+	ui.PrintScoringScale(decision.FormatScoreScale())
 	ui.PrintAlternatives(d)
 
 	choice := input.PromptChoice(
@@ -175,7 +175,7 @@ func scoreAlternatives(svc *service.DecisionService, decisionID int) {
 	}
 
 	for _, alt := range targets {
-		fmt.Printf("\nScoring: %s\n", alt.Name)
+		ui.PrintScoringTarget(alt.Name)
 		for _, c := range d.Criteria {
 			label := fmt.Sprintf("  %s (%d-%d):", c.Name, decision.MinScore, decision.MaxScore)
 			score := input.PromptIntInRange(label, decision.MinScore, decision.MaxScore)
@@ -184,8 +184,23 @@ func scoreAlternatives(svc *service.DecisionService, decisionID int) {
 				return
 			}
 		}
-		ui.PrintSuccess(fmt.Sprintf("Saved scores for %q.", alt.Name))
+		ui.Successf("Saved scores for %q.", alt.Name)
 	}
+}
+
+func selectDecision(decisions []decision.Decision) (id int, ok bool) {
+	if len(decisions) == 0 {
+		ui.Warningf("No decisions yet. Create one first.")
+		return 0, false
+	}
+
+	ui.PrintList(decisions)
+	choice := input.PromptChoice("Enter decision number (0 = cancel):", 0, len(decisions))
+	if choice == 0 {
+		ui.Infof("Selection cancelled.")
+		return 0, false
+	}
+	return decisions[choice-1].ID, true
 }
 
 func showResults(svc *service.DecisionService, decisionID int) {

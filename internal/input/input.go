@@ -2,10 +2,11 @@ package input
 
 import (
 	"bufio"
-	"fmt"
 	"os"
 	"strconv"
 	"strings"
+
+	"go-decido/internal/ui"
 )
 
 var reader = bufio.NewReader(os.Stdin)
@@ -22,7 +23,7 @@ func ReadInt() int {
 		if err == nil {
 			return number
 		}
-		fmt.Println("Please enter a valid number.")
+		ui.Warningf("Please enter a valid number.")
 	}
 }
 
@@ -33,29 +34,29 @@ func ReadFloat() float64 {
 		if err == nil {
 			return number
 		}
-		fmt.Println("Please enter a valid number.")
+		ui.Warningf("Please enter a valid number.")
 	}
 }
 
 func PromptNonEmpty(label string) string {
 	for {
-		fmt.Print(label + " ")
+		ui.Promptf("%s", label)
 		text := ReadString()
 		if text != "" {
 			return text
 		}
-		fmt.Println("Please enter a non-empty value.")
+		ui.Warningf("Please enter a non-empty value.")
 	}
 }
 
 func PromptIntInRange(label string, min, max int) int {
 	for {
-		fmt.Print(label + " ")
+		ui.Promptf("%s", label)
 		n := ReadInt()
 		if n >= min && n <= max {
 			return n
 		}
-		fmt.Printf("Please enter a number between %d and %d.\n", min, max)
+		ui.Warningf("Please enter a number between %d and %d.", min, max)
 	}
 }
 
@@ -65,24 +66,24 @@ func PromptChoice(label string, min, max int) int {
 }
 
 func PromptFloat(label string) float64 {
-	fmt.Print(label + " ")
+	ui.Promptf("%s", label)
 	return ReadFloat()
 }
 
 func PromptFloatNonNegative(label string) float64 {
 	for {
-		fmt.Print(label + " ")
+		ui.Promptf("%s", label)
 		n := ReadFloat()
 		if n >= 0 {
 			return n
 		}
-		fmt.Println("Please enter a non-negative number.")
+		ui.Warningf("Please enter a non-negative number.")
 	}
 }
 
 func PromptYesNo(label string) bool {
 	for {
-		fmt.Print(label + " ")
+		ui.Promptf("%s", label)
 		text := strings.ToLower(ReadString())
 		switch text {
 		case "y", "yes":
@@ -90,7 +91,7 @@ func PromptYesNo(label string) bool {
 		case "n", "no":
 			return false
 		default:
-			fmt.Println("Please enter y or n.")
+			ui.Warningf("Please enter y or n.")
 		}
 	}
 }
